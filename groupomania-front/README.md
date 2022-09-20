@@ -1,4 +1,4 @@
-# groupomania-front
+# groupomaia-front
 
 ## Project setup
 ```
