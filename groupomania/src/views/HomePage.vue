@@ -10,7 +10,7 @@
           alt="Vuetify Logo"
           class="shrink mr-2"
           contain
-          src="./assets/icon-left-font-monochrome-white.png"
+          src="../assets/icon-left-font-monochrome-white.png"
           transition="scale-transition"
           width="150"
         />
@@ -37,19 +37,15 @@
     </v-app-bar>
 
     <v-main>
-      <SignupPage/>
     </v-main>
   </v-app>
 </template>
 
 <script>
-import SignupPage from './components/SignupPage';
-
 export default {
-  name: 'App',
+  name: 'HomePage',
 
   components: {
-    SignupPage,
   },
 
   data: () => ({
