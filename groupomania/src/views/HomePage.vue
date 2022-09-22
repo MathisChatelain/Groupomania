@@ -17,22 +17,12 @@
       </div>
 
       <v-spacer></v-spacer>
-
       <v-btn
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
         text
+        @click="disconnect"
       >
-        <span class="mr-2">Login</span>
-        <v-icon>mdi-open-in-new</v-icon>
-      </v-btn>
-      <v-btn
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
-        text
-      >
-        <span class="mr-2">Signup</span>
-        <v-icon>mdi-open-in-new</v-icon>
+        <span class="mr-2">Disconnect</span>
+        <v-icon>mdi-restart</v-icon>
       </v-btn>
     </v-app-bar>
 
@@ -51,5 +41,11 @@ export default {
   data: () => ({
     //
   }),
+
+  methods: {
+    disconnect() {
+      this.$router.push("/")
+    }
+  }
 };
 </script>

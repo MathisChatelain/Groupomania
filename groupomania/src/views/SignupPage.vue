@@ -77,6 +77,7 @@
               class="anchor--text"
               elevation="10"
               x-large
+              @click="login"
             >
               Login
             </v-btn>
@@ -88,6 +89,7 @@
               class="anchor--text"
               elevation="10"
               x-large
+              @click="signup"
             >
               Signup
             </v-btn>
@@ -109,6 +111,17 @@
       email: "",
       backgroundURL: "https://www.viedesmetiers.com/wp-content/uploads/2019/10/m%C3%A9tier-de-la-grande-distribution.jpg"
     }),
+
+    methods: {
+      login(){
+        console.log("login")
+        this.$router.push("/home")
+      },
+      signup(){
+        console.log("signup")
+        this.$router.push("/home")
+      },
+    },
   }
 </script>
 
