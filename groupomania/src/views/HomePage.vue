@@ -31,7 +31,7 @@
     <v-navigation-drawer
     v-model="drawer"
     :mini-variant.sync="mini"
-    width="30%"
+    width="100%"
     app
     clipped
     color="secondary"
@@ -49,7 +49,10 @@
       v-if="!mini"
       >
         <v-row>
-          <v-col cols="10">
+          <v-col 
+          cols="10"
+          md="4"
+          >
             <v-text-field
                 v-model="title"
                 label="Title"
@@ -68,16 +71,15 @@
           </v-col>
         </v-row>
         <v-row>
-          <v-col cols="12">
-            <v-img
-              v-if="imageIsLoaded"
-              lazy-src="computedImagePreviewURL"
-              max-height="200"
-              src="imagePreviewURL"
-              style="background-color:gray"
-            ></v-img>
+          <v-col  
+          cols="12"
+          md="4"
+          >
           </v-col>
-          <v-col>
+          <v-col  
+          cols="12"
+          md="4"
+          >
             <v-file-input
               v-model="imageFile"
               show-size
@@ -90,7 +92,10 @@
           </v-col>
         </v-row>
         <v-row>
-          <v-col>
+          <v-col  
+          cols="12"
+          md="4"
+          >
             <v-textarea
               v-model="description"
               label="Description"
@@ -100,7 +105,8 @@
           </v-col>
         </v-row>
         <v-row>
-          <v-col 
+          <v-col  
+          cols="12"
           md="4"
           offset-md="4"
           >
@@ -141,24 +147,41 @@
           <v-col 
           v-for="post in posts"
           :key="post.postId"
-          cols="4"
+          cols="12"
+          md="4"
           >
             <v-card
             outlined
             class="pa-5 fluid ma-5"
             elevation="5"
             >
-              <h2 class="font-weight-bold">
+              <h2 class="font-weight-bold mb-2">
                 {{ post.name }}
               </h2>
-              <h3>{{ post.description }}</h3>
+              <h3 class="mb-2">{{ post.description }}</h3>
               <v-btn class="mr-4" @click="postLike(1, post)">
                 {{ post.likes }}
-                <v-icon color="green" class="ml-1">mdi-thumb-up</v-icon>
+                <v-icon
+                v-if="userLikeStatus(post) == 1"
+                color="green" class="ml-1">mdi-thumb-up</v-icon>
+                <v-icon v-else color="green lighten-4" class="ml-1">mdi-thumb-up</v-icon>
               </v-btn>
               <v-btn @click="postLike(-1, post)">
                 {{ post.dislikes }}
-                <v-icon color="red" class="ml-1">mdi-thumb-down</v-icon>
+                <v-icon
+                v-if="userLikeStatus(post) == -1"
+                color="red" class="ml-1">mdi-thumb-down</v-icon>
+                <v-icon v-else color="red lighten-4" class="ml-1">mdi-thumb-down</v-icon>
+              </v-btn>
+              <v-btn
+              v-if="isUserPostOrAdmin(post)"
+              @click="deletePost(post)"
+              class="ml-1"
+              elevation="1"
+              x-small
+              fab
+              >
+                <v-icon color="red">mdi-close</v-icon>
               </v-btn>         
             </v-card>
           </v-col>
@@ -181,7 +204,6 @@ export default {
     drawer: true,
     mini: true,
     showMessageNoPosts: false,
-    imagePreviewURL: null,
     description: "",
     title: "",
     imageFile: null,
@@ -192,6 +214,7 @@ export default {
 
   async created() {
     await this.getPosts();
+    await this.getCurrentUser();
   },
 
   computed: {
@@ -220,6 +243,34 @@ export default {
       this.mini = true;
     },
 
+    userLikeStatus(post) {
+      const userId = axios.defaults.headers['userId']
+      if (post.usersLiked.includes(userId)){
+        return 1;
+      } else if (post.usersDisliked.includes(userId)) {
+        return -1;
+      } else {
+        return 0
+      }
+    },
+
+    isUserPostOrAdmin(post) {
+      const userId = axios.defaults.headers['userId']
+      return post.userId == userId
+    },
+
+    async getCurrentUser() {
+      try {
+        const resp = await axios.get('users/', { data:{
+              userId: axios.defaults.headers['userId']}
+            });
+        console.log(resp)
+        } catch (e) {
+          console.log("error")
+          console.log(e)
+      }
+    },
+
     async getPosts() {
       try {
         const {data} = await axios.get('posts/');
@@ -228,6 +279,7 @@ export default {
         } else {
           this.posts= data.slice().reverse();
           this.showMessageNoPosts = false;
+          console.log(this.posts)
         }
         } catch (e) {
           console.log("error")
@@ -236,17 +288,36 @@ export default {
     },
 
     async postLike(value, post) {
-      console.log(post)
       try {
-          await axios.post(`posts/${post.postId}/like`, {
+          const resp = await axios.post(`posts/${post.postId}/like`, {
               like: value,
-              userId: axios.defaults.headers['userId']
+              userId: axios.defaults.headers['userId'],
+              postId: post.postId
             })
+          if(resp.statusText=="Created"){
+            this.getPosts();
+          }
         } catch (e) {
           console.log("error")
           console.log(e)
         }
     },
+
+    async deletePost(post) {
+      try {
+          const resp = await axios.delete(`posts/${post.postId}`, { data:{
+              userId: axios.defaults.headers['userId'],
+              postId: post.postId
+            }})
+          if(resp.status=="200"){
+            this.getPosts();
+          }
+        } catch (e) {
+          console.log("error")
+          console.log(e)
+        }
+    },
+
 
     async postPost() {
       try {

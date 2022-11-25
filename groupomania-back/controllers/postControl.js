@@ -25,6 +25,7 @@ exports.postPost = (req, res, next) => {
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.body.file.filename}`,
         postId: new mongoose.Types.ObjectId(),
     });
+    console.log(`${req.protocol}://${req.get('host')}/images/${req.body.file.filename}`)
     post.save()
     .then(() => { res.status(201).json({message: 'Post enregistrée !'})})
     .catch(error => { console.log(error);res.status(400).json( { error })})
@@ -37,7 +38,7 @@ exports.postPost = (req, res, next) => {
     } : { ...req.body };
   
     delete postObject._userId;
-    Post.findOne({_id:  ObjectId(req.params.id)})
+    Post.findOne({ postId:  ObjectId(req.body.postId)})
         .then((post) => {
             if (post.userId != req.headers.userid) {
                 res.status(401).json({ message : 'Not authorized'});
@@ -53,15 +54,15 @@ exports.postPost = (req, res, next) => {
  };
 
  exports.deletePost = (req, res, next) => {
-    Post.findOne({ _id:  ObjectId(req.params.id)})
+    Post.findOne({ postId:  ObjectId(req.body.postId)})
         .then(post => {
-            if (post.userId != req.headers.userid) {
+            if (post.userId != req.body.userId) {
                 res.status(401).json({message: 'Not authorized'});
             } else {
                 const filename = post.imageUrl.split('/images/')[1];
                 fs.unlink(`images/${filename}`, () => {
-                    Post.deleteOne({_id: ObjectId(req.params.id)})
-                        .then(() => { res.status(200).json({message: 'Post supprimée !'})})
+                    Post.deleteOne({ postId:  ObjectId(req.body.postId)})
+                        .then(() => { res.status(200).json({message: 'Post supprimé !'})})
                         .catch(error => res.status(401).json({ error }));
                 });
             }
@@ -72,12 +73,29 @@ exports.postPost = (req, res, next) => {
 };
 
 exports.ratePost = (req, res, next) => {
-    Post.findOne({ _id:  ObjectId(req.params.id)})
+    Post.findOne({ postId:  ObjectId(req.body.postId)})
         .then(post => {
             // Cleaning the current state of likes in order to have only one instance of userId per array
-            console.log(post)
-            post.usersDisliked = Array.from(Set(post.usersDisliked))
-            post.usersLiked= Array.from(Set(post.usersLiked))
+            if(!post){
+                return null
+            }
+            // Make sure users are uniques
+            post.usersDisliked = Array.from(new Set(post.usersDisliked))
+            post.usersLiked= Array.from(new Set(post.usersLiked))
+            // Checking if a user already liked a post
+            if(post.usersDisliked.includes(req.body.userId)){
+                if (req.body.like == -1) {
+                    req.body.like = 0;
+                }
+            };
+            if(post.usersLiked.includes(req.body.userId)){
+                if (req.body.like == 1) {
+                    req.body.like = 0;
+                }
+            };
+            // Cleaning the current state of likes
+            post.usersDisliked = post.usersDisliked.filter(e => e !== req.body.userId);
+            post.usersLiked= post.usersLiked.filter(e => e !== req.body.userId);
             switch(req.body.like) {
                 
                 case 1 :
@@ -86,7 +104,7 @@ exports.ratePost = (req, res, next) => {
                 case 0 :
                     // Cleaning the current state of likes
                     post.usersDisliked = post.usersDisliked.filter(e => e !== req.body.userId);
-                    post.usersLiked= post.usersLiked.filter(e => e !== req.body.userId);
+                    post.usersLiked = post.usersLiked.filter(e => e !== req.body.userId);
                     break;
                 case -1 :
                     post.usersDisliked.push(req.body.userId);
