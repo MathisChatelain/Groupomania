@@ -249,12 +249,21 @@ export default {
     posts: [],
     userIsAdmin: false,
     showModify: false,
-    postToModify: {}
+    postToModify: {},
+    userId: "",
   }),
 
   async created() {
+    window.addEventListener("beforeunload", this.unloadProc)
+    if(!axios.defaults.headers["Authorization"]){
+      axios.defaults.headers["Authorization"] = localStorage.getItem("auth").toString()
+      localStorage.removeItem("auth")
+    }
+    this.userId = localStorage.getItem("userId")
+    localStorage.removeItem("userId")
     await this.getPosts();
     await this.getCurrentUser();
+    
   },
 
   methods: {
@@ -263,12 +272,17 @@ export default {
       this.$router.push("/")
     },
 
+    unloadProc() {
+      localStorage.setItem("auth",axios.defaults.headers["Authorization"])
+      localStorage.setItem("userId",this.userId)
+    },
+
     closeNavigationDrawer() {
       this.mini = true;
     },
 
     userLikeStatus(post) {
-      const userId = axios.defaults.headers['userId']
+      const userId = this.userId
       if (post.usersLiked.includes(userId)){
         return 1;
       } else if (post.usersDisliked.includes(userId)) {
@@ -279,8 +293,7 @@ export default {
     },
 
     isUserPostOrAdmin(post) {
-      const userId = axios.defaults.headers['userId']
-      return post.userId == userId ||this.userIsAdmin
+      return post.userId == this.userId || this.userIsAdmin
     },
 
     async getCurrentUser() {

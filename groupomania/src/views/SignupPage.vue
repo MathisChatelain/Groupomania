@@ -141,6 +141,7 @@
             })
           axios.defaults.headers['Authorization'] = data.token;
           axios.defaults.headers['userId'] = data.userId;
+          localStorage.setItem("userId", data.userId)
           this.$router.push("/home")
           } catch (e) {
             console.log("error")
