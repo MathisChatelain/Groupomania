@@ -43,9 +43,8 @@ exports.login = (req, res, next) => {
         .catch(error => res.status(500).json({ error }));
  };
 
- exports.getUser = (req, res, next) => {
-    console.log("here",req.body)
-    User.findOne({ userId: ObjectId(req.body.userId) })
-    .then(post => res.status(200).json(post))
+exports.getUser = (req, res, next) => {
+    User.findOne({ _id: req.headers.userid })
+    .then(user => res.status(200).json(user))
     .catch(error => res.status(404).json({ error }));
 };

@@ -52,6 +52,7 @@
           <v-col 
           cols="10"
           md="4"
+          offset-md="3"
           >
             <v-text-field
                 v-model="title"
@@ -74,11 +75,7 @@
           <v-col  
           cols="12"
           md="4"
-          >
-          </v-col>
-          <v-col  
-          cols="12"
-          md="4"
+          offset-md="3"
           >
             <v-file-input
               v-model="imageFile"
@@ -87,7 +84,6 @@
               dense
               accept="image/*"
               label="Add an image"
-              @change="onFileChange"
             ></v-file-input>
           </v-col>
         </v-row>
@@ -95,6 +91,20 @@
           <v-col  
           cols="12"
           md="4"
+          offset-md="3"
+          >
+            <v-text-field
+              v-model="imageByUrl"
+              dense
+              label="Add an image by URL"
+            ></v-text-field>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col  
+          cols="12"
+          md="4"
+          offset-md="3"
           >
             <v-textarea
               v-model="description"
@@ -108,9 +118,21 @@
           <v-col  
           cols="12"
           md="4"
-          offset-md="4"
+          offset-md="3"
           >
               <v-btn
+                v-if="showModify"
+                block
+                color="primary"
+                class="anchor--text"
+                elevation="10"
+                x-large
+                @click="modifyPost"
+              >
+                Edit
+              </v-btn>
+              <v-btn
+                v-else
                 block
                 color="primary"
                 class="anchor--text"
@@ -158,6 +180,7 @@
               <h2 class="font-weight-bold mb-2">
                 {{ post.name }}
               </h2>
+              <v-img class="mb-2" :src="post.imageUrl" width="300"></v-img>
               <h3 class="mb-2">{{ post.description }}</h3>
               <v-btn class="mr-4" @click="postLike(1, post)">
                 {{ post.likes }}
@@ -166,6 +189,7 @@
                 color="green" class="ml-1">mdi-thumb-up</v-icon>
                 <v-icon v-else color="green lighten-4" class="ml-1">mdi-thumb-up</v-icon>
               </v-btn>
+
               <v-btn @click="postLike(-1, post)">
                 {{ post.dislikes }}
                 <v-icon
@@ -173,16 +197,28 @@
                 color="red" class="ml-1">mdi-thumb-down</v-icon>
                 <v-icon v-else color="red lighten-4" class="ml-1">mdi-thumb-down</v-icon>
               </v-btn>
+
               <v-btn
               v-if="isUserPostOrAdmin(post)"
               @click="deletePost(post)"
-              class="ml-1"
+              class="ml-4"
               elevation="1"
               x-small
               fab
               >
                 <v-icon color="red">mdi-close</v-icon>
-              </v-btn>         
+              </v-btn>
+
+              <v-btn
+              v-if="isUserPostOrAdmin(post)"
+              @click="openModifyPost(post)"
+              class="ml-4"
+              elevation="1"
+              x-small
+              fab
+              >
+                <v-icon color="yellow">mdi-pen</v-icon>
+              </v-btn>          
             </v-card>
           </v-col>
         </v-row>
@@ -207,9 +243,13 @@ export default {
     description: "",
     title: "",
     imageFile: null,
+    imageByUrl: "",
     imageIsLoaded: false,
     postColsSize: 6,
-    posts: []
+    posts: [],
+    userIsAdmin: false,
+    showModify: false,
+    postToModify: {}
   }),
 
   async created() {
@@ -229,16 +269,6 @@ export default {
       this.$router.push("/")
     },
 
-    onFileChange(payload) {
-      const file = payload;
-      if (file) {
-        this.imagePreviewURL = URL.createObjectURL(file);
-        this.imageIsLoaded = true;
-      } else {
-        this.imagePreviewURL =  null
-      }
-    },
-
     closeNavigationDrawer() {
       this.mini = true;
     },
@@ -256,15 +286,13 @@ export default {
 
     isUserPostOrAdmin(post) {
       const userId = axios.defaults.headers['userId']
-      return post.userId == userId
+      return post.userId == userId ||this.userIsAdmin
     },
 
     async getCurrentUser() {
       try {
-        const resp = await axios.get('users/', { data:{
-              userId: axios.defaults.headers['userId']}
-            });
-        console.log(resp)
+        const resp = await axios.get(`posts/users/`);
+        this.userIsAdmin = resp.data.isAdmin;
         } catch (e) {
           console.log("error")
           console.log(e)
@@ -279,7 +307,6 @@ export default {
         } else {
           this.posts= data.slice().reverse();
           this.showMessageNoPosts = false;
-          console.log(this.posts)
         }
         } catch (e) {
           console.log("error")
@@ -318,6 +345,26 @@ export default {
         }
     },
 
+    openModifyPost(post) {
+      this.mini = false;
+      this.showModify = true;
+      this.postToModify = post;
+    },
+
+    async modifyPost() {
+      const post = this.postToModify;
+      this.closeNavigationDrawer();
+      post.name = this.title || post.name
+      post.description = this.description || post.description
+      this.showModify = false;
+      try {
+          await axios.put(`posts/${post.postId}`,post)
+          this.getPosts();
+        } catch (e) {
+          console.log("error")
+          console.log(e)
+        }
+    },
 
     async postPost() {
       try {
@@ -326,7 +373,7 @@ export default {
               name: this.title,
               description: this.description,
               file : {
-                filename: "",
+                filename: this.imageByUrl || this.imageFile
               }
             })
           this.name = "";

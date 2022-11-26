@@ -3,12 +3,6 @@ const fs = require('fs');
 const { default: mongoose } = require('mongoose');
 const { ObjectId } = require('mongodb');
 
-exports.getPost = (req, res, next) => {
-    Post.findOne({ _id: ObjectId(req.params.id) })
-    .then(post => res.status(200).json(post))
-    .catch(error => res.status(404).json({ error }));
-};
-
 exports.getPostList = (req, res, next) => {
     Post.find()
     .then(posts => res.status(200).json(posts))
@@ -25,27 +19,21 @@ exports.postPost = (req, res, next) => {
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.body.file.filename}`,
         postId: new mongoose.Types.ObjectId(),
     });
-    console.log(`${req.protocol}://${req.get('host')}/images/${req.body.file.filename}`)
     post.save()
     .then(() => { res.status(201).json({message: 'Post enregistrée !'})})
     .catch(error => { console.log(error);res.status(400).json( { error })})
  };
 
  exports.updatePost = (req, res, next) => {
-    const postObject = req.body.file ? {
-        ...JSON.parse(req.body.post),
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.body.file.filename}`
-    } : { ...req.body };
-  
-    delete postObject._userId;
+    const postObject = req.body ;
     Post.findOne({ postId:  ObjectId(req.body.postId)})
         .then((post) => {
             if (post.userId != req.headers.userid) {
                 res.status(401).json({ message : 'Not authorized'});
             } else {
-                Post.updateOne({ _id: req.params.id}, { ...postObject, _id: req.params.id})
+                Post.updateOne({ postId:  ObjectId(req.body.postId)}, postObject)
                 .then(() => res.status(200).json({message : 'Post modifiée!'}))
-                .catch(error => res.status(401).json({ error }));
+                .catch(error => res.status(400).json( { error }));
             }
         })
         .catch((error) => {
