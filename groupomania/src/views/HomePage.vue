@@ -257,12 +257,6 @@ export default {
     await this.getCurrentUser();
   },
 
-  computed: {
-    computedImagePreviewURL(){
-      return this.imagePreviewURL
-    },
-  },
-
   methods: {
     disconnect() {
       axios.defaults.headers["Authorization"] = "";
